@@ -1,11 +1,10 @@
 import * as fs from "fs";
-import { TextNode, parse } from "./node-fast-html-parser/my_index.js";
+import { parse } from "node-html-parser";
 
 const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
-// 用于匹配jsx字符串 return(<></>)
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
 const QUOTED_STRING = /["|'](.*)["|']/g;
-//
+
 async function parseJSXFile(fileName) {
   let content = await fs.promises.readFile(fileName);
   let str = content.toString();
@@ -16,10 +15,10 @@ async function parseJSXFile(fileName) {
     console.log("get the HTML content:");
     console.log(HTML);
     const root = parse(HTML);
-    // 这里用 html-fast-node-parser 解析
+    // 这里用 html-node-parser 解析
     let translated = translate(root.firstChild);
     str = str.replace(HTML, translated);
-    await fs.promises.writeFile("output1.js", str);
+    await fs.promises.writeFile("output.js", str);
   }
 }
 
@@ -35,14 +34,14 @@ function translate(root) {
       .map((node) => translate(node))
       .filter((node) => node != null);
   }
-  if (root instanceof TextNode) {
+  if (root.nodeType == 3) {
     // 此时可能会出现 hello {world} 这样的需要进行解析的
-    if (root.rawText.trim() === "") {
+    if (root._rawText.trim() === "") {
       return null;
     }
-    return parseText(root.rawText);
+    return parseText(root._rawText);
   }
-  let tagName = root.tagName;
+  let tagName = root.rawTagName;
   let props = getAttrs(root.rawAttrs);
   console.log("Current Props:");
   console.log(props);
@@ -98,10 +97,10 @@ function replaceInterpolations(txt, isJSON = false) {
   // 第二种是在文本中，<h1>Hello {name}!</h1>
   // 分别对应着 isOnJSON 的是否
   //  isJSON： txt = `{"className":"{myClass}","ref":"{myRef}"}`
-  // isn'tJSON txt =`Hello {name}!`
+  // isn'tJSON txt ="Hello {name}!"
   //返回值分别是
-  //isJSON txt = `{"className":myClass,"ref":myRef}`
-  //isn'tJSON txt = `"Hello " + name + "!"'
+  //
+  //isn'tJSON txt = `Hello " + name + "!`
   let interpolation = null;
 
   while ((interpolation = JSX_INTERPOLATION.exec(txt))) {

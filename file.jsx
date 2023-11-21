@@ -19,7 +19,7 @@ export function Component() {
   return (
     <div className={myClass} ref={myRef} age={age}>
       <h1>Hello {name}!</h1>
-      <p />
+      <App />
     </div>
   );
 }

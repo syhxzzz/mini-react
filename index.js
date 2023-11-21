@@ -13,6 +13,8 @@ let a = {
   children: [
     { type: "h1", props: {}, children: ["hello world"] },
     { type: App, props: {}, children: [] },
+    { type: "h1", props: {}, children: ["114 514"] },
+    { type: "h1", props: {}, children: ["514 114"] },
   ],
 };
 ReactDOM.render(a, document.getElementById("root"));

@@ -1,4 +1,4 @@
-# readme
+# README
 ## 效果预览
 
 这是一个 jsx 的解释器，可以将代码段
@@ -104,7 +104,7 @@ const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
 
       #### props
 
-      props 是将root.rawAttrs字符串进行解析,
+      props 是将 `root.rawAttrs` 字符串进行解析,
       
       ``````javascript
       root.rawAttrs = `className={myClass} ref={myRef}`;
@@ -144,6 +144,8 @@ const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
 
 ### 在 html-fast-node-parser 中
 
+#### `parse()`
+
 在 html-fast-node-parser 中，主要先调用 `parse(HTML)` 函数进行解析
 
 ``````javascript
@@ -169,9 +171,111 @@ const root = parse(HTML);
    ``````
 
    2. 之后创造一个新的 `HTMLElement` 并将其压入栈中
-   3. 
 
 3. 如果是 </ tags
 
-   1. 首先会 `while(true)` 循环遍历 stack，如果此时当前 match 到的 tagName 与栈中最上方的元素的 tagName重合，则 stack 弹出并更新 `currentParent`，
+   首先会 `while(true)` 循环遍历 stack，如果此时当前 match 到的 tagName 与栈中最上方的元素的 tagName重合，则 stack 弹出并更新 `currentParent`，
 
+#### `HTMLElement.structure()`
+
+在 `structure()` 中会用 `res` 存储所有的可打印的内容，用于剔除 `TextNode` 中的无效信息。
+
+``````javascript
+TextNode  a =  {
+  childNodes: [],
+  rawText: "\n      ",
+  parentNode: {
+    // 
+  },
+}
+``````
+
+其中会调用 `dfs()` 遍历 `root` 结点，对于 root 结点每一个子结点 `node`
+
+* 如果是 HTMLElement ，则递归调用 `dfs(node) `
+* 如果是 TextNode，则判断 `node.rawText` 是否为空格，若不是，则将 `"#text"` 存入 res 中
+
+#### `querySelectorAll(selector)`
+
+对于以下函数调用
+
+``````javascript
+let root = HTMLParser.parse(
+  '<ul id="list"><li class="abc def"><p class="ghi">Hello World</p><hr />  <script src=""></script><!-- dd --></li></ul>'
+);
+console.dir(root.querySelectorAll(".abc.def .ghi"));
+``````
+
+1. 首先会会对 selector 的类型进行判断
+   * 如果是 Matcher 则跳过
+   * 如果是 字符串 `".abc.def .ghi"`，如上述例子中所述，则调用 `new Matcher(selector) `进行初始化
+
+##### `Matcher(selector)`
+
+​	Matcher 分为两种匹配方式 `匹配 id` 和 `匹配 class`
+
+* 匹配 class,例如
+
+  ``````javascript
+  matcher = '.abc.def';
+  source = `for (let cls=["abc","def"],i=0;i<cls.length;i++)
+  if(el.classNames.indexOf(cls[i])===-1)
+  return false;`;
+  return new Function("el", source);
+  function anonymous(el) {
+    for (let cls=["abc","def"],i=0;i<cls.length;i++)if(el.classNames.indexOf(cls[i])===-1)return false;
+    return true;
+  }
+  ``````
+
+* 匹配 id
+
+  ```````javascript
+  matcher = `#list`;
+  source = `if (el.id!="list") return false;return true;`;
+  return new Function("el", source);
+  function anonymous(el) {
+  if (el.id!="list") return false;return true;
+  }
+  ```````
+
+2. 创建  `res`  和  `stack`  分别用于存储答案和深度优先搜索的栈用于记录 root 往下的所有 `HTMLElement`
+
+3. 对 `this.childNodes` 的所有子结点进行遍历，通用格式
+
+   ``````javascript
+   stack.push([node,0,false]);
+   while (stack.length) {
+           let state = stack.back;
+           let el = state[0];
+           if (state[1] === 0) {
+             // Seen for first time
+             if (el instanceof TextNode) {
+               stack.pop();
+               continue;
+             }
+             if ((state[2] = matcher.advance(el) && matcher.matched)) {
+               res.push(el);
+               matcher.rewind();
+               stack.pop();
+               continue;
+             }
+           }
+           if (state[1] < el.childNodes.length) {
+             stack.push([el.childNodes[state[1]++], 0, false]);
+           } else {
+             if (state[2]) matcher.rewind();
+             stack.pop();
+           }
+         }
+   ``````
+
+   4. `while()` 调用方式
+
+      当栈非空时，执行以下操作：
+
+      - 获取栈顶元素并检查其状态。
+      - 如果是第一次看到该节点并且它是一个文本节点，那么将其从栈中弹出并继续。
+      - 如果节点通过 `matcher.advance(el)` 方法与选择器匹配，则将节点添加到结果数组 `res` 中，回退一格 `matcher`，将节点从栈中弹出并继续。
+      - 如果当前节点的所有子节点都已检查过，如果该节点与选择器匹配，则回退一格 `matcher` 。然后将其从栈中弹出并继续。否则，将下一个子节点及其相关信息推入栈中。
+      - 重复上述过程，直到栈为空。

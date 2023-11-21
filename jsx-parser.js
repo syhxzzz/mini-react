@@ -20,6 +20,7 @@ async function parseJSXFile(fileName) {
     let translated = translate(root.firstChild);
     str = str.replace(HTML, translated);
     await fs.promises.writeFile("output1.js", str);
+    console.log(root.firstChild.structure);
   }
 }
 

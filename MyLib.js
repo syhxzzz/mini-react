@@ -32,10 +32,8 @@ export function createElement(tag, opts, ...children) {
 //   document.getElementById("root")
 // );
 export function render(element, containerNode) {
-  const rootComponent = instantiateComponent(element);
-  const node = rootComponent.mount();
-  containerNode.appendChild(node);
-  console.log(1);
+  mountTree(element, containerNode);
+  mountTree(element, containerNode);
 }
 
 function instantiateComponent(element) {
@@ -54,7 +52,9 @@ function instantiateComponent(element) {
 class CompositeComponent {
   constructor(element) {
     this.currentElement = element;
-    this.publicInstance = null;
+    // this.publicInstance = null;
+    // used by Class Component ,cause Function Component doesn't have public instance
+    // yet Class Component has state and life cycle which means it needs public class method
     this.renderedComponent = null;
   }
   getPublicInstance() {
@@ -72,9 +72,13 @@ class CompositeComponent {
 
     this.publicInstance = publicInstance;
 
-    let renderComponent = instantiateComponent(renderedElement);
-    this.renderComponent = renderComponent;
-    return renderComponent.mount();
+    let renderedComponent = instantiateComponent(renderedElement);
+    this.renderedComponent = renderedComponent;
+    return renderedComponent.mount();
+  }
+  unmount() {
+    const renderedComponent = this.renderedComponent;
+    renderedComponent.unmount();
   }
 }
 
@@ -88,6 +92,10 @@ class TextComponent {
     this.node = node;
     return node;
   }
+  unmount() {
+    // this.node.innerHTML=''
+    // do nothing
+  }
 }
 class DOMComponent {
   constructor(element) {
@@ -100,6 +108,14 @@ class DOMComponent {
     return this.node;
   }
 
+  unmount() {
+    const renderedChildren = this.renderedChildren;
+    renderedChildren.forEach((child) => {
+      if (child) {
+        child.unmount();
+      }
+    });
+  }
   mount() {
     const element = this.currentElement;
     const { type, props, children } = element;
@@ -120,4 +136,23 @@ class DOMComponent {
     });
     return node;
   }
+}
+
+export function mountTree(element, containerNode) {
+  if (containerNode.firstChild) {
+    unmountTree(containerNode);
+  }
+  const rootComponent = instantiateComponent(element);
+
+  const node = rootComponent.mount();
+  containerNode.appendChild(node);
+  node._internalInstance = rootComponent;
+}
+
+function unmountTree(containerNode) {
+  const node = containerNode.firstChild;
+  const rootComponent = node._internalInstance;
+
+  rootComponent.unmount();
+  containerNode.innerHTML = "";
 }

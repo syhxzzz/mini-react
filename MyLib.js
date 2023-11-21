@@ -46,6 +46,35 @@ function instantiateComponent(element) {
     // 此时为 文字节点
     // element = "hello world!"
     return new TextComponent(element);
+  } else if (typeof type === "function") {
+    return new CompositeComponent(element);
+  }
+}
+
+class CompositeComponent {
+  constructor(element) {
+    this.currentElement = element;
+    this.publicInstance = null;
+    this.renderedComponent = null;
+  }
+  getPublicInstance() {
+    // 对于组合组件，公共类实例
+    return this.publicInstance;
+  }
+  mount() {
+    const element = this.currentElement;
+    const { type, props } = element;
+    let publicInstance;
+    let renderedElement;
+    // suppose type to be function component
+    publicInstance = null;
+    renderedElement = type(props);
+
+    this.publicInstance = publicInstance;
+
+    let renderComponent = instantiateComponent(renderedElement);
+    this.renderComponent = renderComponent;
+    return renderComponent.mount();
   }
 }
 

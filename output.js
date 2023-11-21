@@ -20,7 +20,7 @@ export function Component() {
     "div",
     { className: myClass, ref: myRef, age: age },
     MyLib.createElement("h1", {}, "Hello " + name + "!"),
-    MyLib.createElement("App", {})
+    MyLib.createElement(App, {})
   );
 }
 

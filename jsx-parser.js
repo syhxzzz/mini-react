@@ -47,8 +47,10 @@ function translate(root) {
   let props = getAttrs(root.rawAttrs);
   console.log("Current Props:");
   console.log(props);
-
-  return `MyLib.createElement("${tagName}",${replaceInterpolations(
+  if (tagName[0] >= "a" && tagName <= "z") {
+    tagName = `"${tagName}"`;
+  }
+  return `MyLib.createElement(${tagName},${replaceInterpolations(
     JSON.stringify(props, replacer),
     true
   )},${children})`;

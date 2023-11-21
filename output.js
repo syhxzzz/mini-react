@@ -1,7 +1,7 @@
 /*
 crateElement(
     'div',
-    {},
+    { className: myClass, ref: myRef },
     createElement(
         'h1',
         {},
@@ -15,10 +15,9 @@ export function Component() {
   let myRef = null;
   let name = "Fernando";
   let myClass = "open";
-  return MyLib.createElement(
-    "div",
-    { className: myClass, ref: myRef },
-    MyLib.createElement("h1", {}, "Hello " + name + "!")
+  let age = 11;
+  return (
+    MyLib.createElement("div",{"className":myClass,"ref":myRef,"age":age},MyLib.createElement("h1",{},"Hello " + name + "!"),MyLib.createElement("p",{},))
   );
 }
 

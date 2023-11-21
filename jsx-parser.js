@@ -19,7 +19,7 @@ async function parseJSXFile(fileName) {
     // 这里用 html-fast-node-parser 解析
     let translated = translate(root.firstChild);
     str = str.replace(HTML, translated);
-    await fs.promises.writeFile("output1.js", str);
+    await fs.promises.writeFile("output.js", str);
     console.log(root.firstChild.structure);
   }
 }

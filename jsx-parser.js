@@ -1,8 +1,10 @@
 import * as fs from "fs";
 import { TextNode, parse } from "./html-parser/my_index.js";
 
-const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
 // 用于匹配jsx字符串 return(<></>)
+const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
+
+// 匹配 JSX 中的 {}
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
 const QUOTED_STRING = /["|'](.*)["|']/g;
 //
@@ -60,7 +62,6 @@ function parseText(rawText) {
   let interpolation = rawText.match(JSX_INTERPOLATION);
   if (interpolation) {
     console.log("Found interpolation " + interpolation);
-    // TODO
     let txt = replaceInterpolations(rawText);
     return `"${txt}"`;
   } else {

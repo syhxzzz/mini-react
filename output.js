@@ -16,9 +16,16 @@ export function Component() {
   let name = "Fernando";
   let myClass = "open";
   let age = 11;
-  return (
-    MyLib.createElement("div",{"className":myClass,"ref":myRef,"age":age},MyLib.createElement("h1",{},"Hello " + name + "!"),MyLib.createElement(App,{},))
+  return MyLib.createElement(
+    "div",
+    { className: myClass, ref: myRef, age: age },
+    MyLib.createElement("h1", {}, "Hello " + name + "!"),
+    MyLib.createElement(App, {})
   );
+}
+
+function App() {
+  return <div>hi my friend</div>;
 }
 
 console.log(Component());

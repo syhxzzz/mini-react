@@ -1,11 +1,12 @@
 // require("apollojs");
+import "apollojs";
 
-let entities = require("entities");
-
+// let entities = require("entities");
+import * as entities from "entities";
 /**
  * Node Class as base class for TextNode and HTMLElement.
  */
-class Node {
+export class Node {
   constructor() {
     this.childNodes = [];
   }
@@ -15,7 +16,7 @@ class Node {
     TextNode to contain a text element in DOM tree
   *  @param {string} value [description]
 */
-class TextNode extends Node {
+export class TextNode extends Node {
   constructor(value) {
     super();
     this.rawText = value;
@@ -26,6 +27,7 @@ class TextNode extends Node {
    * @return {string} text content
    */
   get text() {
+    // entities.decodeHTML5
     return entities.decodeHTML5(this.rawText);
   }
 
@@ -59,7 +61,7 @@ var kBlockElements = {
  * TODO: in the index.js rawAttrs is {Object}
  */
 
-class HTMLElement extends Node {
+export class HTMLElement extends Node {
   constructor(name, keyAttrs, rawAttrs) {
     super();
     this.tagName = name;
@@ -279,7 +281,7 @@ var pMatchFunctionCache = {};
  * @param {string} selector Selector
  */
 
-class Matcher {
+export class Matcher {
   constructor(selector) {
     this.matchers = selector.split(" ").map(function (matcher) {
       if (pMatchFunctionCache[matcher]) {
@@ -377,94 +379,88 @@ var kElementsClosedByClosing = {
   td: { tr: true, table: true },
   th: { tr: true, table: true },
 };
-var kBlockTextElements = {
-  script: true,
-  noscript: true,
-  style: true,
-  pre: true,
-};
 
 /**
  * Parses HTML and returns a root element
  */
-module.exports = {
-  Matcher: Matcher,
-  Node: Node,
-  HTMLElement: HTMLElement,
-  TextNode: TextNode,
+// module.exports = {
+//  export Matcher,
+// Node,
+// HTMLElement,
+// TextNode,
 
-  /**
-   * Parse a chunk of HTML source
-   * @param {string} data html
-   * @return {HTMLElement} root element
-   */
-  parse: function (data) {
-    let root = new HTMLElement(null, {});
-    let currentParent = root;
-    let stack = [root];
-    let lastTextPos = -1;
+/**
+ * Parse a chunk of HTML source
+ * @param {string} data html
+ * @return {HTMLElement} root element
+ */
+export function parse(data) {
+  let root = new HTMLElement(null, {});
+  let currentParent = root;
+  let stack = [root];
+  let lastTextPos = -1;
 
-    // var kMarkupPattern =
-    // /<!--[^]*?(?=-->)-->|<(\/?)([a-z][a-z0-9]*)\s*([^>]*?)(\/?)>/gi;
+  // var kMarkupPattern =
+  // /<!--[^]*?(?=-->)-->|<(\/?)([a-z][a-z0-9]*)\s*([^>]*?)(\/?)>/gi;
 
-    for (let match; (match = kMarkupPattern.exec(data)); ) {
-      if (lastTextPos > -1) {
-        if (lastTextPos + match[0].length < kMarkupPattern.lastIndex) {
-          // if has content
-          let text = data.substring(
-            lastTextPos,
-            kMarkupPattern.lastIndex - match[0].length
-          );
-          currentParent.appendChild(new TextNode(text));
-        }
+  for (let match; (match = kMarkupPattern.exec(data)); ) {
+    if (lastTextPos > -1) {
+      if (lastTextPos + match[0].length < kMarkupPattern.lastIndex) {
+        // if has content
+        let text = data.substring(
+          lastTextPos,
+          kMarkupPattern.lastIndex - match[0].length
+        );
+        currentParent.appendChild(new TextNode(text));
       }
-      lastTextPos = kMarkupPattern.lastIndex;
-      if (match[0][1] == "!") {
-        // this is a comment
-        continue;
+    }
+    lastTextPos = kMarkupPattern.lastIndex;
+    if (match[0][1] == "!") {
+      // this is a comment
+      continue;
+    }
+    if (!match[1]) {
+      // not </ tags
+      // 都会为其生成 HTMLElement
+      let attrs = {};
+      for (let attMatch; (attMatch = kAttributePattern.exec(match[3])); )
+        attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
+      console.log(attrs);
+      if (
+        !match[4] &&
+        kElementsClosedByOpening[currentParent.tagName] &&
+        kElementsClosedByOpening[currentParent.tagName][match[2]]
+      ) {
+        stack.pop();
+        currentParent = stack.back;
       }
-      if (!match[1]) {
-        // not </ tags
-        // 都会为其生成 HTMLElement
-        let attrs = {};
-        for (let attMatch; (attMatch = kAttributePattern.exec(match[3])); )
-          attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
-        console.log(attrs);
-        if (
-          !match[4] &&
-          kElementsClosedByOpening[currentParent.tagName] &&
-          kElementsClosedByOpening[currentParent.tagName][match[2]]
-        ) {
+      currentParent = currentParent.appendChild(
+        new HTMLElement(match[2], attrs, match[3])
+      );
+      stack.push(currentParent);
+    }
+    if (match[1] || match[4] || kSelfClosingElements[match[2]]) {
+      // </ or /> or <br> etc.
+      while (true) {
+        if (currentParent.tagName == match[2]) {
           stack.pop();
           currentParent = stack.back;
-        }
-        currentParent = currentParent.appendChild(
-          new HTMLElement(match[2], attrs, match[3])
-        );
-        stack.push(currentParent);
-      }
-      if (match[1] || match[4] || kSelfClosingElements[match[2]]) {
-        // </ or /> or <br> etc.
-        while (true) {
-          if (currentParent.tagName == match[2]) {
-            stack.pop();
-            currentParent = stack.back;
-            break;
-          } else {
-            // Trying to close current tag, and move on
-            if (kElementsClosedByClosing[currentParent.tagName]) {
-              if (kElementsClosedByClosing[currentParent.tagName][match[2]]) {
-                stack.pop();
-                currentParent = stack.back;
-                continue;
-              }
+          break;
+        } else {
+          // Trying to close current tag, and move on
+          if (kElementsClosedByClosing[currentParent.tagName]) {
+            if (kElementsClosedByClosing[currentParent.tagName][match[2]]) {
+              stack.pop();
+              currentParent = stack.back;
+              continue;
             }
-            // Use aggressive strategy to handle unmatching markups.
-            break;
           }
+          // Use aggressive strategy to handle unmatching markups.
+          break;
         }
       }
     }
-    return root;
-  },
-};
+  }
+  return root;
+}
+// };

@@ -24,4 +24,8 @@ export function Component() {
   );
 }
 
+function App() {
+  return <div>hi my friend</div>;
+}
+
 console.log(Component());

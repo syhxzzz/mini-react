@@ -36,6 +36,14 @@
 ``````javascript
 const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
 // 用于匹配jsx字符串 return(<></>)
+// 得到
+match =  [
+  "(\n    <div className={myClass} ref={myRef} age={age}>\n      <h1>Hello {name}!</h1>\n      <App />\n    </div>\n  )",
+  "<div className={myClass} ref={myRef} age={age}>\n      <h1>Hello {name}!</h1>\n      <App />\n    </div",
+]
+// 其中 match[0]是匹配到的是符合条件的整个字符串，match[1]是在正则表达式内部的括号中，匹配到的相应的内容
+// 最后的/gs g是指全文匹配，s是指可跨越行，意味着可以匹配多行文本
+ 
 ``````
 
 2. 在调用 html-fast-node-parser 进行解析，将返回 `root` 结点，是用对象相互嵌套组成的对象，其中有着 html 结点的基本属性，例如 tagName,className,id等属性
@@ -156,9 +164,17 @@ const root = parse(HTML);
 在parse中，首先会创造一个 `HTMLElement` 类实例 root 作为所有后续结点的总父亲
 
 随后用正则表达式对 `HTML` 进行解析
+其中用到的正则表达式
+    `var kMarkupPattern =/<!--[^]*?(?=-->)-->|<(\/?)([a-z][a-z0-9]*)\s*([^>]*?)(\/?)>/gi;`
+数据匹配方式
+0. match[0] 返回匹配到的整个字符串
+1. 返回是否有前置 '/' 用于判断是否标签闭合
+2. 标签名
+3. 标签名后信息
+4. 标签是否为自闭合标签
 
+处理逻辑
 1. 如果是注释, <!--content-->，则进行 continue 操作
-
 2. 如果不是</ tags ，说明是标签的开头，如 `<div>`
 
    1. 首先会用对标签中的 id 或者 class 进行识别

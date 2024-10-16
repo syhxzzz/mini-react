@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { TextNode, parse } from "./node-fast-html-parser/my_index.js";
+import { TextNode, parse } from "./html-parser/my_index.js";
 
 const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
 // 用于匹配jsx字符串 return(<></>)

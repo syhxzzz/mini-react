@@ -57,6 +57,32 @@ function performUnitOfWork(fiber) {
   const isFunctionComponent = fiber.type instanceof Function;
   if (isFunctionComponent) {
     updateFunctionComponent(fiber);
+
+    let hookIndex = null;
+    fiber.hooks
+      .filter((hook, index) => {
+        hookIndex = index;
+        return hook.tag === "EFFECT";
+      })
+      .forEach((hook) => {
+        const oldHook =
+          fiber.alternate &&
+          fiber.alternate.hooks &&
+          fiber.alternate.hooks[hookIndex];
+        const oldDeps = oldHook.deps;
+
+        const { callback, deps } = hook;
+        let flag = false;
+        for (let i = 0; i < deps.length; i++) {
+          if (deps[i] !== oldDeps[i]) {
+            flag = true;
+            break;
+          }
+        }
+        if (flag) {
+          pendingEffects.push(callback);
+        }
+      });
   } else {
     updateHostComponent(fiber);
   }
@@ -149,6 +175,8 @@ function commitRoot() {
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
+  pendingEffects.forEach((it) => it());
+  pendingEffects = [];
 }
 
 function commitWork(fiber) {
@@ -231,6 +259,7 @@ function useState(initial) {
     wipFiber.alternate.hooks[hookIndex];
 
   const hook = {
+    tag: "STATE",
     state: oldHook ? oldHook.state : initial,
     queue: [],
   };
@@ -273,9 +302,21 @@ function useLayoutEffect(callback, deps) {
     }
   }
   let hook = {
+    tag: "LAYOUT_EFFECT",
     callback,
     deps,
     clearFunction: flag ? callback() : oldHook.clearFunction,
+  };
+  wipFiber.hooks.push(hook);
+  hookIndex++;
+}
+
+let pendingEffects = [];
+function useEffect(callback, deps) {
+  const hook = {
+    tag: "EFFECT",
+    callback,
+    deps,
   };
   wipFiber.hooks.push(hook);
   hookIndex++;
@@ -292,15 +333,11 @@ function useMemo(callback, deps) {
   // TODO
 }
 
-function useEffect() {
-  // TODO
-}
-
 /** @jsx MiniReact.createElement */
 function Count() {
   const [count, setCount] = useState(0);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     console.log(`计数器更新为: ${count}`);
 
     // 返回的函数会在组件卸载或下一次更新时执行

@@ -255,7 +255,7 @@ function useState(initial) {
   return [hook.state, setState];
 }
 
-function useEffect(callback, deps) {
+function useLayoutEffect(callback, deps) {
   let oldHook =
     wipFiber.alternate &&
     wipFiber.alternate.hooks &&
@@ -285,14 +285,22 @@ const MiniReact = {
   createElement,
   render,
   useState,
-  useEffect,
+  useLayoutEffect,
 };
+
+function useMemo(callback, deps) {
+  // TODO
+}
+
+function useEffect() {
+  // TODO
+}
 
 /** @jsx MiniReact.createElement */
 function Count() {
   const [count, setCount] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     console.log(`计数器更新为: ${count}`);
 
     // 返回的函数会在组件卸载或下一次更新时执行

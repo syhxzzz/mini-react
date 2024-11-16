@@ -352,8 +352,9 @@ export class Matcher {
     pMatchFunctionCache = {};
   }
 }
+// var kMarkupPattern =
 var kMarkupPattern =
-  /<!--[^]*?(?=-->)-->|<(\/?)([a-z][a-z0-9]*)\s*([^>]*?)(\/?)>/gi;
+  /<([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*)>(.*?)<\/\1>|<([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*)\/>/g;
 var kAttributePattern = /\b(id|class)\s*=\s*("([^"]+)"|'([^']+)'|(\S+))/gi;
 var kSelfClosingElements = {
   meta: true,
@@ -406,7 +407,6 @@ export function parse(data) {
   for (let match; (match = kMarkupPattern.exec(data)); ) {
     if (lastTextPos > -1) {
       if (lastTextPos + match[0].length < kMarkupPattern.lastIndex) {
-        // if has content
         let text = data.substring(
           lastTextPos,
           kMarkupPattern.lastIndex - match[0].length
@@ -415,52 +415,47 @@ export function parse(data) {
       }
     }
     lastTextPos = kMarkupPattern.lastIndex;
-    if (match[0][1] == "!") {
-      // this is a comment
-      continue;
-    }
-    if (!match[1]) {
-      // not </ tags
-      // 都会为其生成 HTMLElement
+
+    if (match[1]) {
+      // 普通标签
       let attrs = {};
-      for (let attMatch; (attMatch = kAttributePattern.exec(match[3])); )
-        attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
-      console.log(attrs);
-      if (
-        !match[4] &&
-        kElementsClosedByOpening[currentParent.tagName] &&
-        kElementsClosedByOpening[currentParent.tagName][match[2]]
-      ) {
-        stack.pop();
-        currentParent = stack.back;
+      const attributes = match[2]; // 属性部分
+      if (attributes) {
+        for (let attMatch; (attMatch = kAttributePattern.exec(attributes)); )
+          attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
       }
       currentParent = currentParent.appendChild(
-        new HTMLElement(match[2], attrs, match[3])
+        new HTMLElement(match[1], attrs, match[3])
       );
       stack.push(currentParent);
-    }
-    if (match[1] || match[4] || kSelfClosingElements[match[2]]) {
-      // </ or /> or <br> etc.
+    } else if (match[4]) {
+      // 自闭合标签
+      let attrs = {};
+      const attributes = match[5]; // 属性部分
+      if (attributes) {
+        for (let attMatch; (attMatch = kAttributePattern.exec(attributes)); )
+          attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
+      }
+      currentParent.appendChild(new HTMLElement(match[4], attrs, null));
+    } else {
+      // 闭合标签处理
       while (true) {
-        if (currentParent.tagName == match[2]) {
+        if (currentParent.tagName === match[1]) {
           stack.pop();
           currentParent = stack.back;
           break;
         } else {
-          // Trying to close current tag, and move on
-          if (kElementsClosedByClosing[currentParent.tagName]) {
-            if (kElementsClosedByClosing[currentParent.tagName][match[2]]) {
-              stack.pop();
-              currentParent = stack.back;
-              continue;
-            }
+          if (kElementsClosedByClosing[currentParent.tagName]?.[match[1]]) {
+            stack.pop();
+            currentParent = stack.back;
+            continue;
           }
-          // Use aggressive strategy to handle unmatching markups.
           break;
         }
       }
     }
   }
+
   return root;
 }
 // };

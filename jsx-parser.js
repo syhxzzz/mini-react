@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { TextNode, parse } from "./html-parser/my_index.js";
 
 // 用于匹配jsx字符串 return(<></>)
-const JSX_STRING = /\(\s*(<.*)>\s*\)/gs;
+const JSX_STRING = /return\s*(?:\(\s*)?(<[\s\S]*?>[\s\S]*?<\/[\s\S]*?>)\)?/g;
 
 // 匹配 JSX 中的 {}
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
@@ -14,7 +14,7 @@ async function parseJSXFile(fileName) {
 
   let match = JSX_STRING.exec(str);
   if (match) {
-    let HTML = match[1] + ">";
+    let HTML = match[1];
     console.log("get the HTML content:");
     console.log(HTML);
     const root = parse(HTML);
@@ -43,7 +43,7 @@ function translate(root) {
     if (root.rawText.trim() === "") {
       return null;
     }
-    return parseText(root.rawText);
+    return `\`${parseText(root.rawText)}\``;
   }
   let tagName = root.tagName;
   let props = getAttrs(root.rawAttrs);
@@ -63,7 +63,7 @@ function parseText(rawText) {
   if (interpolation) {
     console.log("Found interpolation " + interpolation);
     let txt = replaceInterpolations(rawText);
-    return `"${txt}"`;
+    return `${txt}`;
   } else {
     console.log("There was interpolation for " + interpolation);
     return rawText;
@@ -105,7 +105,7 @@ function replaceInterpolations(txt, isJSON = false) {
   // isn'tJSON txt =`Hello {name}!`
   //返回值分别是
   //isJSON txt = `{"className":myClass,"ref":myRef}`
-  //isn'tJSON txt = `"Hello " + name + "!"'
+  // isn't JSON txt = `Hello ${name}!`
   let interpolation = null;
 
   while ((interpolation = JSX_INTERPOLATION.exec(txt))) {
@@ -114,10 +114,7 @@ function replaceInterpolations(txt, isJSON = false) {
     if (isJSON) {
       txt = txt.replace(`"{${interpolation[1]}}"`, interpolation[1]);
     } else {
-      txt = txt.replace(
-        `{${interpolation[1]}}`,
-        `" + ` + interpolation[1] + ` + "`
-      );
+      txt = txt.replace(`{${interpolation[1]}}`, `\${${interpolation[1]}}`);
     }
   }
   console.log("The text being fixed is " + txt);

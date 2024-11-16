@@ -17,15 +17,17 @@ export function Component() {
   let myClass = "open";
   let age = 11;
   return (
-    <div className={myClass} ref={myRef} age={age}>
-      <h1>Hello {name}!</h1>
-      <App />
+    <div>
+      <p>add</p>
     </div>
   );
 }
 
-function App() {
-  return <div>hi my friend</div>;
-}
-
 console.log(Component());
+
+{
+  /* <div className={myClass} ref={myRef} age={age}>
+<h1>Hello {name}!</h1>
+<App />
+</div> */
+}

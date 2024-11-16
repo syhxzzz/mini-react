@@ -124,6 +124,17 @@ function replaceInterpolations(txt, isJSON = false) {
   return txt;
 }
 
+const args = process.argv;
+
+// 第三个参数是 filepath
+const filepath = args[2];
+
+if (!filepath) {
+  console.error("Error: Missing filepath argument.");
+  console.log("Usage: node ./parser.js <filepath>");
+  process.exit(1); // 退出程序，表示错误
+}
+
 (async () => {
-  await parseJSXFile("file.jsx");
+  await parseJSXFile("./file.jsx");
 })();

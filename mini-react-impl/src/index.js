@@ -1,4 +1,6 @@
-// import { useStat } from "./re";
+import { MiniReact } from "./react";
+
+const { useEffect, useState, render } = MiniReact;
 
 /** @jsx MiniReact.createElement */
 function Count() {

@@ -69,20 +69,24 @@ function performUnitOfWork(fiber) {
           fiber.alternate &&
           fiber.alternate.hooks &&
           fiber.alternate.hooks[hookIndex];
-        if (!oldDeps) return;
+        if (!oldHook) {
+          hook.clearFunction = hook.callback();
+          return;
+        }
         debugger;
         const oldDeps = oldHook.deps;
 
-        const { callback, deps } = hook;
+        const { deps } = hook;
         let flag = false;
         for (let i = 0; i < deps.length; i++) {
           if (deps[i] !== oldDeps[i]) {
             flag = true;
+            oldHook.clearFunction();
             break;
           }
         }
         if (flag) {
-          pendingEffects.push(callback);
+          pendingEffects.push(hook);
         }
       });
   } else {
@@ -177,7 +181,9 @@ function commitRoot() {
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
   wipRoot = null;
-  pendingEffects.forEach((it) => it());
+  pendingEffects.forEach((hook) => {
+    hook.clearFunction = hook.callback();
+  });
   pendingEffects = [];
 }
 

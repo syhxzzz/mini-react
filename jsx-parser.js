@@ -20,7 +20,7 @@ async function parseJSXFile(fileName) {
     // 这里用 html-parser 解析
     let translated = translate(root.firstChild);
     str = str.replace(HTML, translated);
-    await fs.promises.writeFile("output.js", str);
+    await fs.promises.writeFile(outputPath, str);
     console.log(root.firstChild.structure);
   }
 }
@@ -104,7 +104,7 @@ const args = process.argv;
 
 // 第三个参数是 filepath
 const filepath = args[2];
-
+const outputPath = args[3];
 if (!filepath) {
   console.error("Error: Missing filepath argument.");
   console.log("Usage: node ./parser.js <filepath>");
@@ -112,5 +112,5 @@ if (!filepath) {
 }
 
 (async () => {
-  await parseJSXFile("./file.jsx");
+  await parseJSXFile(filepath);
 })();

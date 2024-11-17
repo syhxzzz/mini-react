@@ -1,6 +1,6 @@
 import { MiniReact } from "./react";
 
-const { useEffect, useState, render, createElement } = MiniReact;
+const { useEffect, useState, render } = MiniReact;
 
 /** @jsx MiniReact.createElement */
 function Count() {
@@ -14,16 +14,12 @@ function Count() {
       console.log(`清理上一次的计数值: ${count}`);
     };
   }, [count]); // 依赖项为 count，每次 count 变化时都会触发
-  return createElement(
-    div,
-    {},
-    createElement(p, {}, `count:${count}`),
-    createElement(
-      button,
-      { onClick: () => setCount((count) => count + 1) },
-      `add 1`
-    )
+  return (
+    <div>
+      <p>count:{count}</p>
+      <button onClick={() => setCount((count) => count + 1)}>add 1</button>
+    </div>
   );
 }
 const container = document.getElementById("root");
-render(Count(), container);
+render(<Count />, container);

@@ -355,7 +355,7 @@ export class Matcher {
 }
 // var kMarkupPattern =
 var kMarkupPattern =
-  /<([A-Z][A-Za-z0-9]*|[a-z][A-Za-z0-9]*)(\s+[^=<>/\s]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*}))?)*\s*(\/?)>/gi;
+  /<\/?[A-Za-z][A-Za-z0-9]*(\s+[^=<>/\s]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*}))?)*\s*\/?>/g;
 var kAttributePattern = /\b(id|class)\s*=\s*("([^"]+)"|'([^']+)'|(\S+))/gi;
 var kSelfClosingElements = {
   meta: true,
@@ -402,9 +402,6 @@ export function parse(data) {
   let stack = [root];
   let lastTextPos = -1;
 
-  // var kMarkupPattern =
-  // /<!--[^]*?(?=-->)-->|<(\/?)([a-z][a-z0-9]*)\s*([^>]*?)(\/?)>/gi;
-
   for (let match; (match = kMarkupPattern.exec(data)); ) {
     const totalExp = match[0];
     // 类似于 totalExp = '<div onClick={() => setCount((count) => count + 1)} className="11"></div>'
@@ -422,10 +419,9 @@ export function parse(data) {
     lastTextPos = kMarkupPattern.lastIndex;
 
     if (closed) {
-      if (currentParent.tagName === match[1]) {
+      if (match[0].includes(currentParent.tagName)) {
         stack.pop();
         currentParent = stack.back;
-        break;
       } else {
         throw Error("Input string label can't be closed");
       }
@@ -435,7 +431,7 @@ export function parse(data) {
       const thisHTMLElement = new HTMLElement(tagName, attrs, props);
       currentParent.appendChild(thisHTMLElement);
       if (!isSelfClosed) {
-        // 自闭合标签
+        // 普通标签，继续向下遍历
         currentParent = thisHTMLElement;
         stack.push(currentParent);
       }

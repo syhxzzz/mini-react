@@ -1,7 +1,4 @@
-// require("apollojs");
 import "apollojs";
-
-// let entities = require("entities");
 import * as entities from "entities";
 /**
  * Node Class as base class for TextNode and HTMLElement.
@@ -39,19 +36,6 @@ export class TextNode extends Node {
     return /^(\s|&nbsp;)*$/.test(this.rawText);
   }
 }
-
-var kBlockElements = {
-  div: true,
-  p: true,
-  ul: true,
-  ol: true,
-  li: true,
-  table: true,
-  tr: true,
-  td: true,
-  section: true,
-  br: true,
-};
 
 /**
  * HTMLElement, which contains a set of children.
@@ -353,34 +337,9 @@ export class Matcher {
     pMatchFunctionCache = {};
   }
 }
-// var kMarkupPattern =
+
 var kMarkupPattern =
   /<\/?[A-Za-z][A-Za-z0-9]*(\s+[^=<>/\s]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*}))?)*\s*\/?>/g;
-var kAttributePattern = /\b(id|class)\s*=\s*("([^"]+)"|'([^']+)'|(\S+))/gi;
-var kSelfClosingElements = {
-  meta: true,
-  img: true,
-  link: true,
-  input: true,
-  area: true,
-  br: true,
-  hr: true,
-};
-var kElementsClosedByOpening = {
-  li: { li: true },
-  p: { p: true, div: true },
-  td: { td: true, th: true },
-  th: { td: true, th: true },
-};
-var kElementsClosedByClosing = {
-  li: { ul: true, ol: true },
-  a: { div: true },
-  b: { div: true },
-  i: { div: true },
-  p: { div: true },
-  td: { tr: true, table: true },
-  th: { tr: true, table: true },
-};
 
 /**
  * Parses HTML and returns a root element
@@ -440,7 +399,6 @@ export function parse(data) {
 
   return root;
 }
-// };
 
 function handleJSXTag(input) {
   const result = {

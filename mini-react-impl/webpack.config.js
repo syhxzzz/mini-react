@@ -32,8 +32,12 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/i,
-        loader: "babel-loader",
+        test: /\.js$/, // 匹配 .jsx 文件
+        use: [
+          {
+            loader: path.resolve(__dirname, "loaders/jsx-parser-loader.js"), // 使用我们刚刚写的 JSX 解析 loader
+          },
+        ],
       },
       {
         test: /\.css$/i,

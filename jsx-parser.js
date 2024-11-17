@@ -2,12 +2,11 @@ import * as fs from "fs";
 import { TextNode, parse } from "./html-parser/my_index.js";
 
 // 用于匹配jsx字符串 return(<></>)
-const JSX_STRING = /return\s*(?:\(\s*)?(<[\s\S]*?>[\s\S]*?<\/[\s\S]*?>)\)?/g;
-
+const JSX_STRING =
+  /return\s*\(\s*(<[\s\S]*?>[\s\S]*?<\/[\s\S]*?>|<[\s\S]*?\/>)\s*\);/g;
 // 匹配 JSX 中的 {}
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
-const QUOTED_STRING = /["|'](.*)["|']/g;
-//
+
 async function parseJSXFile(fileName) {
   let content = await fs.promises.readFile(fileName);
   let str = content.toString();
@@ -18,7 +17,7 @@ async function parseJSXFile(fileName) {
     console.log("get the HTML content:");
     console.log(HTML);
     const root = parse(HTML);
-    // 这里用 html-fast-node-parser 解析
+    // 这里用 html-parser 解析
     let translated = translate(root.firstChild);
     str = str.replace(HTML, translated);
     await fs.promises.writeFile("output.js", str);
@@ -46,16 +45,22 @@ function translate(root) {
     return `\`${parseText(root.rawText)}\``;
   }
   let tagName = root.tagName;
-  let props = getAttrs(root.rawAttrs);
-  console.log("Current Props:");
-  console.log(props);
-  if (tagName[0] >= "a" && tagName <= "z") {
-    tagName = `"${tagName}"`;
+  let props = root.attrs;
+
+  let tmp = stringify(props);
+
+  return `MyLib.createElement(${tagName},${tmp},${children})`;
+}
+
+function stringify(props) {
+  const result = [];
+  for (const key in props) {
+    if (Object.prototype.hasOwnProperty.call(props, key)) {
+      const element = props[key];
+      result.push(`${key}:${element}`);
+    }
   }
-  return `MyLib.createElement(${tagName},${replaceInterpolations(
-    JSON.stringify(props, replacer),
-    true
-  )},${children})`;
+  return `{${result.join(",")}}`;
 }
 
 function parseText(rawText) {
@@ -67,32 +72,6 @@ function parseText(rawText) {
   } else {
     console.log("There was interpolation for " + interpolation);
     return rawText;
-  }
-}
-
-function getAttrs(rawAttrs) {
-  // attrsStr = "className={myClass} ref={myRef}"
-  if (rawAttrs == undefined) return {};
-  if (rawAttrs.trim() === "") return {};
-  let objAttrs = {};
-  let parts = rawAttrs.split(" ");
-  parts.forEach((part) => {
-    const [key, value] = part.split("=");
-    console.log(`obj[${key}]==${value}`);
-    objAttrs[key] = value;
-  });
-  return objAttrs;
-}
-
-function replacer(key, value) {
-  if (key) {
-    let result = QUOTED_STRING.exec(value);
-    if (result) {
-      return parseText(result[1]);
-    }
-    return value;
-  } else {
-    return value;
   }
 }
 

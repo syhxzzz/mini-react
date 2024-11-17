@@ -55,17 +55,18 @@ var kBlockElements = {
 
 /**
  * HTMLElement, which contains a set of children.
- * @param {string} name tagName
+ * @param {string} tagName
  * @param {Object} keyAttrs id and class attribute
  * @param {string} rawAttrs attributes in string
  * TODO: in the index.js rawAttrs is {Object}
  */
 
 export class HTMLElement extends Node {
-  constructor(name, keyAttrs, rawAttrs) {
+  constructor(tagName, keyAttrs, rawAttrs) {
     super();
-    this.tagName = name;
+    this.tagName = tagName;
     this.rawAttrs = rawAttrs || "";
+    this.attrs = keyAttrs;
     this.classNames = [];
     // this.childNodes = [];
     if (keyAttrs.id) {
@@ -354,7 +355,7 @@ export class Matcher {
 }
 // var kMarkupPattern =
 var kMarkupPattern =
-  /<([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*)>(.*?)<\/\1>|<([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*)\/>/g;
+  /<([A-Z][A-Za-z0-9]*|[a-z][A-Za-z0-9]*)(\s+[^=<>/\s]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*}))?)*\s*(\/?)>/gi;
 var kAttributePattern = /\b(id|class)\s*=\s*("([^"]+)"|'([^']+)'|(\S+))/gi;
 var kSelfClosingElements = {
   meta: true,
@@ -405,6 +406,10 @@ export function parse(data) {
   // /<!--[^]*?(?=-->)-->|<(\/?)([a-z][a-z0-9]*)\s*([^>]*?)(\/?)>/gi;
 
   for (let match; (match = kMarkupPattern.exec(data)); ) {
+    const totalExp = match[0];
+    // 类似于 totalExp = '<div onClick={() => setCount((count) => count + 1)} className="11"></div>'
+    const jsxInfo = handleJSXTag(totalExp);
+    const { tagName, isSelfClosed, closed, props } = jsxInfo;
     if (lastTextPos > -1) {
       if (lastTextPos + match[0].length < kMarkupPattern.lastIndex) {
         let text = data.substring(
@@ -416,42 +421,23 @@ export function parse(data) {
     }
     lastTextPos = kMarkupPattern.lastIndex;
 
-    if (match[1]) {
-      // 普通标签
-      let attrs = {};
-      const attributes = match[2]; // 属性部分
-      if (attributes) {
-        for (let attMatch; (attMatch = kAttributePattern.exec(attributes)); )
-          attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
+    if (closed) {
+      if (currentParent.tagName === match[1]) {
+        stack.pop();
+        currentParent = stack.back;
+        break;
+      } else {
+        throw Error("Input string label can't be closed");
       }
-      currentParent = currentParent.appendChild(
-        new HTMLElement(match[1], attrs, match[3])
-      );
-      stack.push(currentParent);
-    } else if (match[4]) {
-      // 自闭合标签
-      let attrs = {};
-      const attributes = match[5]; // 属性部分
-      if (attributes) {
-        for (let attMatch; (attMatch = kAttributePattern.exec(attributes)); )
-          attrs[attMatch[1]] = attMatch[3] || attMatch[4] || attMatch[5];
-      }
-      currentParent.appendChild(new HTMLElement(match[4], attrs, null));
     } else {
-      // 闭合标签处理
-      while (true) {
-        if (currentParent.tagName === match[1]) {
-          stack.pop();
-          currentParent = stack.back;
-          break;
-        } else {
-          if (kElementsClosedByClosing[currentParent.tagName]?.[match[1]]) {
-            stack.pop();
-            currentParent = stack.back;
-            continue;
-          }
-          break;
-        }
+      // 处理 props
+      const attrs = parseProps(props);
+      const thisHTMLElement = new HTMLElement(tagName, attrs, props);
+      currentParent.appendChild(thisHTMLElement);
+      if (!isSelfClosed) {
+        // 自闭合标签
+        currentParent = thisHTMLElement;
+        stack.push(currentParent);
       }
     }
   }
@@ -459,3 +445,113 @@ export function parse(data) {
   return root;
 }
 // };
+
+function handleJSXTag(input) {
+  const result = {
+    tagName: "",
+    props: "",
+    isSelfClosed: false,
+    closed: false,
+  };
+
+  // 移除首尾空白字符
+  const trimmed = input.trim();
+
+  // 检查是否闭合标签
+  if (trimmed.startsWith("</")) {
+    result.closed = true;
+    // 提取标签名
+    const endTag = trimmed.slice(2, trimmed.indexOf(">")).trim();
+    result.tagName = endTag;
+    return result;
+  }
+
+  // 检查是否自闭合标签
+  result.isSelfClosed = trimmed.endsWith("/>");
+
+  // 去掉尖括号
+  const innerContent = trimmed.slice(1, result.isSelfClosed ? -2 : -1).trim();
+
+  // 提取标签名
+  let spaceIndex = innerContent.indexOf(" ");
+  if (spaceIndex === -1) {
+    // 没有属性部分
+    result.tagName = innerContent;
+    result.props = "";
+  } else {
+    // 有属性部分
+    result.tagName = innerContent.slice(0, spaceIndex);
+    result.props = innerContent.slice(spaceIndex + 1).trim();
+  }
+
+  return result;
+}
+
+function parseProps(propsString) {
+  const attrs = {};
+  let currentKey = "";
+  let currentValue = "";
+  let inQuotes = false;
+  let quoteType = ""; // Type of quotes (' or ")
+  let inBraces = false; // Track if inside {}
+  let isParsingValue = false;
+
+  for (let i = 0; i < propsString.length; i++) {
+    const char = propsString[i];
+
+    if (inQuotes) {
+      // Inside quotes, accumulate value until the quote ends
+      if (char === quoteType) {
+        inQuotes = false;
+        currentValue += char; // Include the closing quote
+      } else {
+        currentValue += char;
+      }
+    } else if (inBraces) {
+      // Inside braces, accumulate value until the brace ends
+      if (char === "}") {
+        inBraces = false;
+        currentValue += char; // Include the closing brace
+      } else {
+        currentValue += char;
+      }
+    } else {
+      if (char === "=") {
+        // Equal sign indicates the start of a value
+        isParsingValue = true;
+      } else if (char === '"' || char === "'") {
+        // Start of a quoted value
+        inQuotes = true;
+        quoteType = char;
+        currentValue += char; // Include the opening quote
+      } else if (char === "{") {
+        // Start of a brace-enclosed value
+        inBraces = true;
+        currentValue += char; // Include the opening brace
+      } else if (char === " " && isParsingValue && currentValue.trim() !== "") {
+        // Space indicates the end of a key-value pair (outside quotes/braces)
+        currentValue = currentValue.trim();
+        if (currentValue[0] === "{") currentValue = currentValue.slice(1, -1);
+        attrs[currentKey.trim()] = currentValue.trim();
+        currentKey = "";
+        currentValue = "";
+        isParsingValue = false;
+      } else if (isParsingValue) {
+        // Accumulate value
+        currentValue += char;
+      } else {
+        // Accumulate key
+        currentKey += char;
+      }
+    }
+  }
+
+  // Add the last key-value pair if any
+  if (currentKey.trim() && currentValue.trim()) {
+    currentValue = currentValue.trim();
+    if (currentValue[0] === "{") currentValue = currentValue.slice(1, -1);
+    attrs[currentKey.trim()] = currentValue.trim();
+  }
+
+  return attrs;
+}

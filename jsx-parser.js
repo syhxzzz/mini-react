@@ -49,7 +49,7 @@ function translate(root) {
 
   let tmp = stringify(props);
 
-  return `MyLib.createElement(${tagName},${tmp},${children})`;
+  return `MiniReact.createElement("${tagName}",${tmp},${children})`;
 }
 
 function stringify(props) {

@@ -1,4 +1,4 @@
-function createElement(type, props, ...children) {
+export function createElement(type, props, ...children) {
   return {
     type,
     props: {
@@ -20,7 +20,7 @@ function createTextElement(text) {
   };
 }
 
-function render(element, container) {
+export function render(element, container) {
   wipRoot = {
     dom: container,
     props: {
@@ -69,6 +69,8 @@ function performUnitOfWork(fiber) {
           fiber.alternate &&
           fiber.alternate.hooks &&
           fiber.alternate.hooks[hookIndex];
+        if (!oldDeps) return;
+        debugger;
         const oldDeps = oldHook.deps;
 
         const { callback, deps } = hook;
@@ -252,7 +254,7 @@ function reconcileChildren(wipFiber, elements) {
   }
 }
 
-function useState(initial) {
+export function useState(initial) {
   const oldHook =
     wipFiber.alternate &&
     wipFiber.alternate.hooks &&
@@ -284,7 +286,7 @@ function useState(initial) {
   return [hook.state, setState];
 }
 
-function useLayoutEffect(callback, deps) {
+export function useLayoutEffect(callback, deps) {
   let oldHook =
     wipFiber.alternate &&
     wipFiber.alternate.hooks &&
@@ -312,7 +314,7 @@ function useLayoutEffect(callback, deps) {
 }
 
 let pendingEffects = [];
-function useEffect(callback, deps) {
+export function useEffect(callback, deps) {
   const hook = {
     tag: "EFFECT",
     callback,

@@ -73,7 +73,6 @@ function performUnitOfWork(fiber) {
           hook.clearFunction = hook.callback();
           return;
         }
-        debugger;
         const oldDeps = oldHook.deps;
 
         const { deps } = hook;

@@ -32,9 +32,15 @@ function translate(root) {
   console.log(root);
   let children = [];
   if (root.childNodes.length > 0) {
-    children = root.childNodes
-      .map((node) => translate(node))
-      .filter((node) => node != null);
+    // children = root.childNodes
+    //   .map((node) => translate(node))
+    //   .filter((node) => node != null);
+    root.childNodes.forEach((node) => {
+      let child = translate(node);
+      if (child) {
+        children.push(child);
+      }
+    });
   }
   if (root instanceof TextNode) {
     // 此时可能会出现 hello {world} 这样的需要进行解析的
@@ -71,18 +77,28 @@ function stringify(props) {
 // 对于一个变量应该返回 ${变量}
 // 对于一个字符串应该返回 '字符串'
 function parseText(rawText) {
+  // 这里应该重复处理，直到没有插值为止
   let interpolation = rawText.match(JSX_INTERPOLATION);
   if (interpolation) {
     // input:
     // `count:{count}`
     // output:
-    // `count:` + count
+    // `'count:',count`
     // input:
     // `{a}`
     // output:
     // `a`
-    console.log("Found interpolation " + interpolation);
-    // let txt = replaceInterpolations(rawText);
+    while (interpolation) {
+      const value = interpolation[0];
+      const position = rawText.indexOf(value);
+      const variable = value.slice(1, -1);
+      let left = rawText.slice(0, position);
+      left = left === "" ? left : `'${left}'` + ",";
+      let right = rawText.slice(position + value.length);
+      right = right === "" ? right : "," + `'${right}'`;
+      rawText = `${left}${variable}${right}`;
+      interpolation = rawText.match(JSX_INTERPOLATION);
+    }
     return rawText;
   } else {
     console.log("There was interpolation for " + interpolation);

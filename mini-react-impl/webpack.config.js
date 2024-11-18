@@ -35,7 +35,7 @@ const config = {
         test: /\.js$/, // 匹配 .jsx 文件
         use: [
           {
-            loader: path.resolve(__dirname, "loaders/jsx-parser-loader.js"), // 使用我们刚刚写的 JSX 解析 loader
+            loader: path.resolve(__dirname, "loaders/jsx-parser-loader.js"),
           },
         ],
       },

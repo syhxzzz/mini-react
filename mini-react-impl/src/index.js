@@ -22,5 +22,7 @@ function Count() {
     </div>
   );
 }
+const element = <Count />;
 const container = document.getElementById("root");
-render(MiniReact.createElement(Count, {}), container);
+// render(MiniReact.createElement(Count, {}), container);
+render(element, container);

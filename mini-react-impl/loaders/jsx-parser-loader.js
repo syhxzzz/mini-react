@@ -1,4 +1,3 @@
-const fs = require("fs");
 const { TextNode, parse } = require("./html-parser");
 
 // 用于匹配jsx字符串 return(<></>)
@@ -6,21 +5,6 @@ const JSX_STRING =
   /return\s*\(\s*(<[\s\S]*?>[\s\S]*?<\/[\s\S]*?>|<[\s\S]*?\/>)\s*\);/g;
 // 匹配 JSX 中的 {}
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
-
-async function parseJSXFile(fileName) {
-  let content = await fs.promises.readFile(fileName);
-  let str = content.toString();
-
-  let match = JSX_STRING.exec(str);
-  if (match) {
-    let HTML = match[1];
-    const root = parse(HTML);
-    // 这里用 html-parser 解析
-    let translated = translate(root.firstChild);
-    str = str.replace(HTML, translated);
-  }
-  return str;
-}
 
 function translate(root) {
   if (Array.isArray(root) && root.length == 0) {
@@ -91,8 +75,8 @@ function replaceInterpolations(txt, isJSON = false) {
 }
 
 module.exports = async function (str) {
-  let match = JSX_STRING.exec(str);
-  if (match) {
+  let match = null;
+  while ((match = JSX_STRING.exec(str))) {
     let HTML = match[1];
     const root = parse(HTML);
     // 这里用 html-parser 解析

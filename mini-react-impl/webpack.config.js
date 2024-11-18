@@ -13,7 +13,7 @@ const stylesHandler = isProduction
 
 const config = {
   devtool: "source-map",
-  entry: "./src/index.js",
+  entry: "./src/index.jsx",
   output: {
     path: path.resolve(__dirname, "dist"),
   },
@@ -32,7 +32,7 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.js$/, // 匹配 .jsx 文件
+        test: /\.jsx$/, // 匹配 .jsx 文件
         use: [
           {
             loader: path.resolve(__dirname, "loaders/jsx-parser-loader.js"),

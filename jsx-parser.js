@@ -1,28 +1,27 @@
 import * as fs from "fs";
-import { TextNode, parse } from "./html-parser/my_index.js";
+import { TextNode, parse } from "./mini-react-impl/loaders/html-parser.js";
 
 // 用于匹配jsx字符串 return(<></>)
 const JSX_STRING =
-  /return\s*\(\s*(<[\s\S]*?>[\s\S]*?<\/[\s\S]*?>|<[\s\S]*?\/>)\s*\);/g;
-// 匹配 JSX 中的 {}
+  /<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?>[\s\S]*?<\/\1>|<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?\/>/g;
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
 
 async function parseJSXFile(fileName) {
   let content = await fs.promises.readFile(fileName);
   let str = content.toString();
 
-  let match = JSX_STRING.exec(str);
-  if (match) {
-    let HTML = match[1];
+  let match = null;
+  while ((match = JSX_STRING.exec(str))) {
+    let HTML = match[0];
     console.log("get the HTML content:");
     console.log(HTML);
     const root = parse(HTML);
     // 这里用 html-parser 解析
     let translated = translate(root.firstChild);
     str = str.replace(HTML, translated);
-    await fs.promises.writeFile(outputPath, str);
     console.log(root.firstChild.structure);
   }
+  await fs.promises.writeFile(outputPath, str);
 }
 
 function translate(root) {
@@ -42,14 +41,20 @@ function translate(root) {
     if (root.rawText.trim() === "") {
       return null;
     }
-    return `\`${parseText(root.rawText)}\``;
+    return parseText(root.rawText);
   }
   let tagName = root.tagName;
   let props = root.attrs;
 
   let tmp = stringify(props);
 
-  return `MiniReact.createElement("${tagName}",${tmp},${children})`;
+  const isLowerCase = (str) => {
+    return "a" <= str[0] && str[0] <= "z";
+  };
+
+  return `MiniReact.createElement(${
+    isLowerCase(tagName) ? `"${tagName}"` : tagName
+  },${tmp},${children})`;
 }
 
 function stringify(props) {
@@ -63,15 +68,25 @@ function stringify(props) {
   return `{${result.join(",")}}`;
 }
 
+// 对于一个变量应该返回 ${变量}
+// 对于一个字符串应该返回 '字符串'
 function parseText(rawText) {
   let interpolation = rawText.match(JSX_INTERPOLATION);
   if (interpolation) {
+    // input:
+    // `count:{count}`
+    // output:
+    // `count:` + count
+    // input:
+    // `{a}`
+    // output:
+    // `a`
     console.log("Found interpolation " + interpolation);
-    let txt = replaceInterpolations(rawText);
-    return `${txt}`;
+    // let txt = replaceInterpolations(rawText);
+    return rawText;
   } else {
     console.log("There was interpolation for " + interpolation);
-    return rawText;
+    return `\`${rawText}\``;
   }
 }
 

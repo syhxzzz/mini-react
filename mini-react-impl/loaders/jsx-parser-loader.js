@@ -2,7 +2,7 @@ const { TextNode, parse } = require("./html-parser");
 
 // 用于匹配jsx字符串 return(<></>)
 const JSX_STRING =
-  /return\s*\(\s*(<[\s\S]*?>[\s\S]*?<\/[\s\S]*?>|<[\s\S]*?\/>)\s*\);/g;
+  /<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?>[\s\S]*?<\/\1>|<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?\/>/g;
 // 匹配 JSX 中的 {}
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
 
@@ -28,7 +28,13 @@ function translate(root) {
 
   let tmp = stringify(props);
 
-  return `MiniReact.createElement("${tagName}",${tmp},${children})`;
+  const isLowerCase = (str) => {
+    return "a" <= str[0] && str[0] <= "z";
+  };
+
+  return `MiniReact.createElement(${
+    isLowerCase(tagName) ? `"${tagName}"` : tagName
+  },${tmp},${children})`;
 }
 
 function stringify(props) {
@@ -74,10 +80,10 @@ function replaceInterpolations(txt, isJSON = false) {
   return txt;
 }
 
-module.exports = async function (str) {
+module.exports = function (str) {
   let match = null;
   while ((match = JSX_STRING.exec(str))) {
-    let HTML = match[1];
+    let HTML = match[0];
     const root = parse(HTML);
     // 这里用 html-parser 解析
     let translated = translate(root.firstChild);

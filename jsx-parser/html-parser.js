@@ -41,7 +41,6 @@ class HTMLElement extends Node {
     this.rawAttrs = rawAttrs || "";
     this.attrs = keyAttrs;
     this.classNames = [];
-    // this.childNodes = [];
     if (keyAttrs.id) {
       this.id = keyAttrs.id;
     }
@@ -82,94 +81,7 @@ class HTMLElement extends Node {
     dfs(this);
     return res.join("\n");
   }
-  ku;
-  /**
-   * Query CSS selector to find matching nodes.
-   * @param {string} selector Simplified CSS selector
-   * @param {Matcher} selector A Matcher instance
-   * @return {HTMLElement[]} matching elements
-   */
-  querySelectorAll(selector) {
-    let matcher;
-    if (selector instanceof Matcher) {
-      matcher = selector;
-      matcher.reset();
-    } else {
-      matcher = new Matcher(selector);
-    }
-    let res = [];
-    let stack = [];
-    for (let id = 0; id < this.childNodes.length; id++) {
-      const node = this.childNodes[id];
-      stack.push([node, 0, false]);
-      while (stack.length) {
-        let state = stack.back;
-        let el = state[0];
-        if (state[1] === 0) {
-          // Seen for first time
-          if (el instanceof TextNode) {
-            stack.pop();
-            continue;
-          }
-          if ((state[2] = matcher.advance(el) && matcher.matched)) {
-            res.push(el);
-            matcher.rewind();
-            stack.pop();
-            continue;
-          }
-        }
-        if (state[1] < el.childNodes.length) {
-          stack.push([el.childNodes[state[1]++], 0, false]);
-        } else {
-          if (state[2]) matcher.rewind();
-          stack.pop();
-        }
-      }
-    }
 
-    return res;
-  }
-  /**
-   * Query CSS Selector to find matching node.
-   * @param  {string}         selector Simplified CSS selector
-   * @param  {Matcher}        selector A Matcher instance
-   * @return {HTMLElement}    matching node
-   */
-  querySelector(selector) {
-    let matcher;
-    if (selector instanceof Matcher) {
-      matcher = selector;
-      matcher.reset();
-    } else {
-      matcher = new Matcher(selector);
-    }
-    let stack = [];
-    for (let index = 0; index < this.childNodes.length; index++) {
-      const node = this.childNodes[index];
-      stack.push([node, 0, false]);
-      while (stack.length) {
-        let state = stack.back;
-        let el = state[0];
-        if (state[1] === 0) {
-          //Seen for first time
-          if (el instanceof TextNode) {
-            stack.pop();
-            continue;
-          }
-          if ((state[2] = matcher.advance(el) && matcher.matched)) {
-            return el;
-          }
-        }
-        if (state[1] < el.childNodes.length) {
-          stack.push([el.childNodes[state[1]++], 0, false]);
-        } else {
-          if (state[2]) matcher.rewind();
-          stack.pop();
-        }
-      }
-    }
-    return null;
-  }
   /**
    * Append a child node to childNodes
    * @param {node} node node to append
@@ -180,33 +92,10 @@ class HTMLElement extends Node {
     this.childNodes.push(node);
     return node;
   }
-  /**
-   * Get first child node
-   * @return {Node} first child node
-   */
-  get firstChild() {
-    return this.childNodes.front;
-  }
-  /**
-   * Get last child node
-   * @return {Node} last child node
-   */
-  get lastChild() {
-    return this.childNodes.back;
-  }
 }
 
 var kMarkupPattern =
   /<\/?[A-Za-z][A-Za-z0-9]*(\s+[^=<>/\s]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*}))?)*\s*\/?>/g;
-
-/**
- * Parses HTML and returns a root element
- */
-// module.exports = {
-//  export Matcher,
-// Node,
-// HTMLElement,
-// TextNode,
 
 /**
  * Parse a chunk of HTML source

@@ -1,6 +1,5 @@
 const { TextNode, parse } = require("./html-parser");
 
-// 用于匹配jsx字符串 return(<></>)
 const JSX_STRING =
   /<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?>[\s\S]*?<\/\1>|<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?\/>/g;
 // 匹配 JSX 中的 {}

@@ -1,4 +1,4 @@
-import { MiniReact } from "./react";
+import { MiniReact } from "../MiniReact";
 
 const { useEffect, useState, render } = MiniReact;
 
@@ -18,11 +18,8 @@ function Count() {
   const a = <div>123</div>;
 
   return (
-    <div>
-      {a} count:{count}
-      <p onClick={() => setCount((count) => count + 1)}>count:{count}</p>
-      <p>this is a react project</p>
-      <button onClick={() => setCount((count) => count + 1)}>add 1</button>
+    <div className="123" ref={a}>
+      123
     </div>
   );
 }

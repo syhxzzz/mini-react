@@ -1,28 +1,9 @@
-import * as fs from "fs";
-import { TextNode, parse } from "./html-parser.js";
+const { TextNode, parse } = require("./html-parser.js");
 
 // 用于匹配jsx字符串 return(<></>)
 const JSX_STRING =
   /<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?>[\s\S]*?<\/\1>|<([a-zA-Z][^\s/>]*)(?:\s[^>]*?)?\/>/g;
 const JSX_INTERPOLATION = /\{([a-zA-Z0-9]+)\}/gs;
-
-async function parseJSXFile(fileName) {
-  let content = await fs.promises.readFile(fileName);
-  let str = content.toString();
-
-  let match = null;
-  while ((match = JSX_STRING.exec(str))) {
-    let HTML = match[0];
-    console.log("get the HTML content:");
-    console.log(HTML);
-    const root = parse(HTML);
-    // 这里用 html-parser 解析
-    let translated = translate(root.firstChild);
-    str = str.replace(HTML, translated);
-    console.log(root.firstChild.structure);
-  }
-  await fs.promises.writeFile(outputPath, str);
-}
 
 function translate(root) {
   if (Array.isArray(root) && root.length == 0) {
@@ -113,17 +94,16 @@ function parseText(rawText) {
   }
 }
 
-const args = process.argv;
-
-// 第三个参数是 filepath
-const filepath = args[2];
-const outputPath = args[3];
-if (!filepath) {
-  console.error("Error: Missing filepath argument.");
-  console.log("Usage: node ./parser.js <filepath>");
-  process.exit(1); // 退出程序，表示错误
+function parseJSX(str) {
+  let match = null;
+  while ((match = JSX_STRING.exec(str))) {
+    let HTML = match[0];
+    const root = parse(HTML);
+    // 这里用 html-parser 解析
+    let translated = translate(root.firstChild);
+    str = str.replace(HTML, translated);
+  }
+  return str;
 }
 
-(async () => {
-  await parseJSXFile(filepath);
-})();
+module.exports = parseJSX;

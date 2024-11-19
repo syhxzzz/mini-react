@@ -223,36 +223,6 @@ class HTMLElement extends Node {
   get lastChild() {
     return this.childNodes.back;
   }
-
-  /**
-   * Get attributes
-   * @return {Object} parsed and unescaped attributes
-   */
-  get attributes() {
-    if (this._attrs) {
-      return this._attrs;
-    }
-    this._attrs = {};
-    let attrs = this.rawAttributes;
-    for (let key in attrs) {
-      this._attrs[key] = entities.decodeHTML5(attrs[key]);
-    }
-    return this._attrs;
-  }
-
-  get rawAttributes() {
-    if (this._rawAttrs) {
-      return this._rawAttrs;
-    }
-    let attrs = {};
-    if (this.rawAttrs) {
-      let re = /\b([a-z][a-z0-9\-]*)\s*=\s*("([^"]+)"|'([^']+)'|(\S+))/gi;
-      for (let match; (match = re.exec(this.rawAttrs)); )
-        attrs[match[1]] = match[3] || match[4] || match[5];
-    }
-    this._rawAttrs = attrs;
-    return attrs;
-  }
 }
 
 var kMarkupPattern =

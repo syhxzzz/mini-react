@@ -19,10 +19,10 @@ function translate(root) {
   }
   if (root instanceof TextNode) {
     // 此时可能会出现 hello {world} 这样的需要进行解析的
-    if (root.rawText.trim() === "") {
+    if (root.text.trim() === "") {
       return null;
     }
-    return parseText(root.rawText);
+    return parseText(root.text);
   }
   let tagName = root.tagName;
   let props = root.attrs;

@@ -1,4 +1,3 @@
-const entities = require("entities");
 /**
  * Node Class as base class for TextNode and HTMLElement.
  */
@@ -15,16 +14,7 @@ class Node {
 class TextNode extends Node {
   constructor(value) {
     super();
-    this.rawText = value;
-  }
-
-  /**
-   * Get unescaped text value of current node and its children.
-   * @return {string} text content
-   */
-  get text() {
-    // entities.decodeHTML5
-    return entities.decodeHTML5(this.rawText);
+    this.text = value;
   }
 
   /**
@@ -32,7 +22,7 @@ class TextNode extends Node {
    * @return {bool}
    */
   get isWhitespace() {
-    return /^(\s|&nbsp;)*$/.test(this.rawText);
+    return /^(\s|&nbsp;)*$/.test(this.text);
   }
 }
 
@@ -59,25 +49,7 @@ class HTMLElement extends Node {
       this.classNames = keyAttrs.class.split(/\s+/);
     }
   }
-  /**
-   * Get unescaped text value of current node and its children
-   * @return {string} text content
-   */
-  get text() {
-    return entities.decodeHTML5(this.rawText);
-  }
 
-  /**
-   * Get escaped text value of current node and its children
-   * @return {string} text content
-   */
-  get rawText() {
-    let res = "";
-    for (let index = 0; index < this.childNodes.length; index++) {
-      const child = this.childNodes[index];
-      res += child.rawText;
-    }
-  }
   /**
    * Get DOM structure
    * @return {string} structure

@@ -16,7 +16,7 @@ const filepath = args[2];
 const outputPath = args[3];
 if (!filepath) {
   console.error("Error: Missing filepath argument.");
-  console.log("Usage: node ./parser.js <filepath>");
+  console.log("Usage: node ./bin.js <filepath> <outputPath>");
   process.exit(1); // 退出程序，表示错误
 }
 

@@ -1,4 +1,3 @@
-require("apollojs");
 const entities = require("entities");
 /**
  * Node Class as base class for TextNode and HTMLElement.

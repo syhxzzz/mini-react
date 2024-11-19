@@ -23,7 +23,6 @@
     "workbox-webpack-plugin": "^7.3.0"
   },
   "dependencies": {
-    "apollojs": "^1.3.0",
     "entities": "^5.0.0"
   }
 }

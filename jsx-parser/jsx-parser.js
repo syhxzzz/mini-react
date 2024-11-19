@@ -100,7 +100,7 @@ function parseJSX(str) {
     let HTML = match[0];
     const root = parse(HTML);
     // 这里用 html-parser 解析
-    let translated = translate(root.firstChild);
+    let translated = translate(root.childNodes[0]);
     str = str.replace(HTML, translated);
   }
   return str;

@@ -21,7 +21,7 @@ function translate(root) {
     if (root.rawText.trim() === "") {
       return null;
     }
-    return `\`${parseText(root.rawText)}\``;
+    return parseText(root.rawText);
   }
   let tagName = root.tagName;
   let props = root.attrs;
@@ -49,35 +49,46 @@ function stringify(props) {
 }
 
 function parseText(rawText) {
+  rawText = rawText.replace(/\s+/g, " ").trim();
   let interpolation = rawText.match(JSX_INTERPOLATION);
+
   if (interpolation) {
-    let txt = replaceInterpolations(rawText);
-    return `${txt}`;
-  } else {
-    return rawText;
-  }
-}
-
-function replaceInterpolations(txt, isJSON = false) {
-  // 查找 interpolation 有两种情况
-  // 第一种是在 props 中，如<div className={myClass} ref={myRef}>
-  // 第二种是在文本中，<h1>Hello {name}!</h1>
-  // 分别对应着 isOnJSON 的是否
-  //  isJSON： txt = `{"className":"{myClass}","ref":"{myRef}"}`
-  // isn'tJSON txt =`Hello {name}!`
-  //返回值分别是
-  //isJSON txt = `{"className":myClass,"ref":myRef}`
-  // isn't JSON txt = `Hello ${name}!`
-  let interpolation = null;
-
-  while ((interpolation = JSX_INTERPOLATION.exec(txt))) {
-    if (isJSON) {
-      txt = txt.replace(`"{${interpolation[1]}}"`, interpolation[1]);
-    } else {
-      txt = txt.replace(`{${interpolation[1]}}`, `\${${interpolation[1]}}`);
+    // 如果只有一个插值表达式且没有其他文本，直接返回变量名
+    if (rawText.match(/^\{[^}]+\}$/) !== null) {
+      return rawText.slice(1, -1);
     }
+
+    // 处理包含插值的文本
+    let parts = [];
+    let lastIndex = 0;
+
+    while ((interpolation = JSX_INTERPOLATION.exec(rawText))) {
+      const [match, variable] = interpolation;
+      const position = interpolation.index;
+
+      // 添加插值前的文本（如果存在）
+      const beforeText = rawText.slice(lastIndex, position).trim();
+      if (beforeText) {
+        parts.push(`\`${beforeText}\``);
+      }
+
+      // 添加变量
+      parts.push(variable);
+
+      lastIndex = position + match.length;
+    }
+
+    // 添加最后剩余的文本（如果存在）
+    const remainingText = rawText.slice(lastIndex).trim();
+    if (remainingText) {
+      parts.push(`\`${remainingText}\``);
+    }
+
+    return parts.join(",");
+  } else {
+    // 纯文本，直接返回模板字符串
+    return `\`${rawText}\``;
   }
-  return txt;
 }
 
 module.exports = function (str) {

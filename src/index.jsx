@@ -1,4 +1,4 @@
-import { MiniReact } from "../../MiniReact";
+import { MiniReact } from "../MiniReact";
 
 const { useEffect, useState, render } = MiniReact;
 

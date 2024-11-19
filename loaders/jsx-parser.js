@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { TextNode, parse } from "./mini-react-impl/loaders/html-parser.js";
+import { TextNode, parse } from "./html-parser.js";
 
 // 用于匹配jsx字符串 return(<></>)
 const JSX_STRING =

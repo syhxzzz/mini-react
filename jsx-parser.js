@@ -32,15 +32,9 @@ function translate(root) {
   console.log(root);
   let children = [];
   if (root.childNodes.length > 0) {
-    // children = root.childNodes
-    //   .map((node) => translate(node))
-    //   .filter((node) => node != null);
-    root.childNodes.forEach((node) => {
-      let child = translate(node);
-      if (child) {
-        children.push(child);
-      }
-    });
+    children = root.childNodes
+      .map((node) => translate(node))
+      .filter((node) => node != null);
   }
   if (root instanceof TextNode) {
     // 此时可能会出现 hello {world} 这样的需要进行解析的
@@ -77,58 +71,46 @@ function stringify(props) {
 // 对于一个变量应该返回 ${变量}
 // 对于一个字符串应该返回 '字符串'
 function parseText(rawText) {
-  // 这里应该重复处理，直到没有插值为止
+  rawText = rawText.replace(/\s+/g, " ").trim();
   let interpolation = rawText.match(JSX_INTERPOLATION);
+
   if (interpolation) {
-    // input:
-    // `count:{count}`
-    // output:
-    // `'count:',count`
-    // input:
-    // `{a}`
-    // output:
-    // `a`
-    while (interpolation) {
-      const value = interpolation[0];
-      const position = rawText.indexOf(value);
-      const variable = value.slice(1, -1);
-      let left = rawText.slice(0, position);
-      left = left === "" ? left : `'${left}'` + ",";
-      let right = rawText.slice(position + value.length);
-      right = right === "" ? right : "," + `'${right}'`;
-      rawText = `${left}${variable}${right}`;
-      interpolation = rawText.match(JSX_INTERPOLATION);
+    // 如果只有一个插值表达式且没有其他文本，直接返回变量名
+    if (rawText.match(/^\{[^}]+\}$/) !== null) {
+      return rawText.slice(1, -1);
     }
-    return rawText;
+
+    // 处理包含插值的文本
+    let parts = [];
+    let lastIndex = 0;
+
+    while ((interpolation = JSX_INTERPOLATION.exec(rawText))) {
+      const [match, variable] = interpolation;
+      const position = interpolation.index;
+
+      // 添加插值前的文本（如果存在）
+      const beforeText = rawText.slice(lastIndex, position).trim();
+      if (beforeText) {
+        parts.push(`\`${beforeText}\``);
+      }
+
+      // 添加变量
+      parts.push(variable);
+
+      lastIndex = position + match.length;
+    }
+
+    // 添加最后剩余的文本（如果存在）
+    const remainingText = rawText.slice(lastIndex).trim();
+    if (remainingText) {
+      parts.push(`\`${remainingText}\``);
+    }
+
+    return parts.join(",");
   } else {
-    console.log("There was interpolation for " + interpolation);
+    // 纯文本，直接返回模板字符串
     return `\`${rawText}\``;
   }
-}
-
-function replaceInterpolations(txt, isJSON = false) {
-  // 查找 interpolation 有两种情况
-  // 第一种是在 props 中，如<div className={myClass} ref={myRef}>
-  // 第二种是在文本中，<h1>Hello {name}!</h1>
-  // 分别对应着 isOnJSON 的是否
-  //  isJSON： txt = `{"className":"{myClass}","ref":"{myRef}"}`
-  // isn'tJSON txt =`Hello {name}!`
-  //返回值分别是
-  //isJSON txt = `{"className":myClass,"ref":myRef}`
-  // isn't JSON txt = `Hello ${name}!`
-  let interpolation = null;
-
-  while ((interpolation = JSX_INTERPOLATION.exec(txt))) {
-    console.log("fixing interpolation for " + txt);
-    console.log("interpolation is " + interpolation);
-    if (isJSON) {
-      txt = txt.replace(`"{${interpolation[1]}}"`, interpolation[1]);
-    } else {
-      txt = txt.replace(`{${interpolation[1]}}`, `\${${interpolation[1]}}`);
-    }
-  }
-  console.log("The text being fixed is " + txt);
-  return txt;
 }
 
 const args = process.argv;
